@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Queue>
+	<!--
+		req_trx  -- >  REQ.SV1.TIMEOUT -- >  Broker Roud Robin -- >  REQ.SV1.TIMEOUT_1, REQ.SV1.TIMEOUT_2, ... , REQ.SV1.TIMEOUT_N
+	-->
+    <prgname>N/A</prgname>
+	<input>REQ.SV1.TIMEOUT_2</input>  
+	<output>RES.SV1</output>
+	<error>RES.SV1.ERROR</error>
+	<timeout>N/A</timeout>
+</Queue>

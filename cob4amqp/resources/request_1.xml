@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Queue>
+	<!-- 
+	REQ.SV1.C1	REQ is request
+				SV1 means RESOLVER_1 (node), that has C1, C2, .. , CN input queues
+					Queue broker (ActiveMQ/QPID) populates those request queues (Round-Robin)  from REQ.SV1
+	prgname = 	req_trx is an .so object, that listen in an input queue
+				request.sh -> request (main) -> driver.o (driver.cob) -> req_trx.so (req_trx.cob)
+	input	=	input  queue
+	output	=	output queue to send requests to the remote HOST.
+	timeout	=	timeout queue, where req_trx schedules a entry, to be processed by timer.sh 
+	-->
+    <prgname>req_trx</prgname>
+	<input>REQ.SV1.C1</input>  
+	<output>REQ.SV1.HOST</output>
+	<error>REQ.SV1.ERROR</error>
+	<timeout>REQ.SV1.TIMEOUT</timeout>
+</Queue>

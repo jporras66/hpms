@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+	PostgreSql connection Pool (PGBouncer)
+-->
+<Pg95Properties> 
+
+	<DbConnection>
+		<provider>postgresql</provider>
+		<hostname>sagitta</hostname>	
+		<port>6432</port>
+		<dbname>HPS-CP</dbname>
+		<user>hps</user>
+		<password>password</password>		
+	</DbConnection>
+	
+</Pg95Properties>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<DbConnection> 
+    <provider>Pgbouncer pool for PostgreSQL DB</provider>
+    <!--
+        PostgreSQL DB    
+    <connection>HPS@127.0.0.1:5432</connection> 
+    -->
+    <name>HPS-CP</name>
+    <host>sagitta</host>
+    <port>6432</port>
+    <user>hps</user> 
+    <password>password</password>
+</DbConnection>    

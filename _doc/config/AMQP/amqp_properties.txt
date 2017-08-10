@@ -1,0 +1,171 @@
+/opt/activemq-5.14.0/bin/activemq browse CLIENT.127.0.0.1.IN
+============================================================
+JMS_CUSTOM_FIELD:clientPort = 51366
+JMS_CUSTOM_FIELD:JMS_AMQP_MA_x-opt-jms-msg-type = 5
+JMS_HEADER_FIELD:JMSDestination = CLIENT.127.0.0.1.IN
+JMS_CUSTOM_FIELD:JMS_AMQP_MESSAGE_FORMAT = 0
+JMS_HEADER_FIELD:JMSMessageID = ID:739145e7-16a9-4e38-aa05-577aeb126293:1:2:1-100
+JMS_HEADER_FIELD:JMSDeliveryMode = non-persistent
+JMS_CUSTOM_FIELD:JMS_AMQP_MA_x-opt-jms-dest = 0
+JMS_CUSTOM_FIELD:JMS_AMQP_NATIVE = true
+JMS_BODY_FIELD:JMSBytes:1 =
+JMS_HEADER_FIELD:JMSExpiration = 0
+JMS_CUSTOM_FIELD:messageUUID = c72d5a9a-319c-46d3-b90d-66b60ad738dc
+JMS_HEADER_FIELD:JMSPriority = 4
+JMS_HEADER_FIELD:JMSRedelivered = false
+JMS_CUSTOM_FIELD:clientIp = 127.0.0.1
+JMS_HEADER_FIELD:JMSTimestamp = 1476181408453
+
+/opt/activemq-5.14.0/bin/activemq browse REQ.SV1.C1
+====================================================
+JMS_CUSTOM_FIELD:clientPort = 50018
+JMS_CUSTOM_FIELD:JMS_AMQP_MA_x_HYPHEN_opt_HYPHEN_jms_HYPHEN_dest = 0
+JMS_HEADER_FIELD:JMSDestination = REQ.SV1.C1
+JMS_CUSTOM_FIELD:JMS_AMQP_MESSAGE_FORMAT = 0
+JMS_HEADER_FIELD:JMSMessageID = ID:sagitta-27572-1476257390889-23:1:1:1:1
+JMS_HEADER_FIELD:JMSDeliveryMode = persistent
+JMS_CUSTOM_FIELD:breadcrumbId = ID:fe430943-f7f2-4b44-8efd-b1c198f7bd96:1:2:1-1
+JMS_CUSTOM_FIELD:JMS_AMQP_MA_x_HYPHEN_opt_HYPHEN_jms_HYPHEN_msg_HYPHEN_type = 5
+JMS_CUSTOM_FIELD:JMS_AMQP_NATIVE = true
+JMS_BODY_FIELD:JMSBytes:1 =
+JMS_HEADER_FIELD:JMSExpiration = 0
+JMS_CUSTOM_FIELD:messageUUID = 0d5ad5ea-26d6-45ef-ba06-043bddc729e9
+JMS_CUSTOM_FIELD:CamelJmsDeliveryMode = 2
+JMS_HEADER_FIELD:JMSPriority = 4
+JMS_HEADER_FIELD:JMSRedelivered = false
+JMS_CUSTOM_FIELD:clientIp = 127.0.0.1
+JMS_HEADER_FIELD:JMSTimestamp = 1476259545984
+
+[javier@sagitta cob4brk]$ ./queueListen broker_connection.xml  request_1.xml
+amqpConnect->connection OK to : amqp:tcp:localhost:5672
+start : driver          - 2016101210111375
+driver lnk-pmg-xml is : request_1.xml
+driver filename is    : /home/javier/apl/cob2amq/resources/request_1.xml                                                                                                                
+driver q_prgname : req_trx
+driver q_input   : REQ.SV1.C1
+driver q_output  : REQ.SV1.HOST
+driver q_error   : REQ.SV1.ERROR
+driver q_timeout : REQ.SV1.TIMEOUT
+driver errstatus :
+driver about to call ... : req_trx.so
+start : req_trx.cob     - 2016101210111377
+req_trx.cob     q_input   : REQ.SV1.C1
+req_trx.cob     q_output  : REQ.SV1.HOST
+req_trx.cob     q_error   : REQ.SV1.ERROR
+req_trx.cob     q_timeout : REQ.SV1.TIMEOUT
+req_trx.cob     errstatus :
+req_trx.cob     - amqpRecvMessageCC before
+req_trx.cob     q_msglen    : +00027
+req_trx.cob     q_input     : REQ.SV1.C1
+req_trx.cob     q_msgid     : ID:fe430943-f7f2-4b44-8efd-b1c198f7bd96:1:2:1-1
+req_trx.cob     q_message   : Hola Elen!! Ke ? Mek!!@ :-)
+req_trx.cob     q_mimetype  :
+req_trx.cob     q_num       : +00006
+req_trx.cob     Property    : 0001 is clientIp
+req_trx.cob     Value       : 0001 is 127.0.0.1
+req_trx.cob     Property    : 0002 is clientPort
+req_trx.cob     Value       : 0002 is 50018
+req_trx.cob     Property    : 0003 is messageUUID
+req_trx.cob     Value       : 0003 is 0d5ad5ea-26d6-45ef-ba06-043bddc729e9
+req_trx.cob     Property    : 0004 is x-amqp-creation-time
+req_trx.cob     Value       : 0004 is 1476259426094
+req_trx.cob     Property    : 0005 is x-amqp-message-annotations
+req_trx.cob     Value       : 0005 is {x-opt-jms-dest:0, x-opt-jms-msg-type:5}
+req_trx.cob     Property    : 0006 is x-amqp-to
+req_trx.cob     Value       : 0006 is queue://CLIENT.127.0.0.1.IN
+req_trx.cob     errstatus   :
+req_trx.cob     - amqpSendMessageCC before
+req_trx.cob     q_msglen      : +00027
+req_trx.cob     q_output    : REQ.SV1.HOST
+req_trx.cob     q_message   : Hola Elen!! Ke ? Mek!!@ :-)
+req_trx.cob     errstatus   :
+req_trx.cob     - amqpRecvMessageCC before
+
+
+There are other fields defined in the AMQP 1.0 message format that do not have direct accessors on the Message class.
+The format for the keys is x-amqp-<field-name>. The keys in use are: x-amqp-first-acquirer and x-amqp-delivery-count for the header section, 
+and x-amqp-to, x-amqp-absolute-expiry-time, x-amqp-creation-time, x-amqp-group-id, x-amqp-qroup-sequence 
+and x-amqp-reply-to-group-id for the properties section. 
+
+		The format for the keys is x-amqp-<field-name>
+
+123456789-123456789-123456789-123456789-
+========================================
+
+HEADER SECTION
+==============
+x-amqp-first-acquirer
+x-amqp-delivery-count
+
+PROPERTIES SECTION
+==================
+x-amqp-to
+x-amqp-absolute-expiry-time
+x-amqp-creation-time
+x-amqp-group-id
+x-amqp-qroup-sequence
+x-amqp-reply-to-group-id
+
+delivery- and message- annotations sections 
+===========================================
+x-amqp-delivery-annotations
+x-amqp-message-annotations
+
+		JMS										Camel Routing												C++ Client
+JMS_AMQP_MA_x-opt-jms-msg-type 		JMS_AMQP_MA_x_HYPHEN_opt_HYPHEN_jms_HYPHEN_msg_HYPHEN_type		x-opt-jms-msg-type
+
+JMS_AMQP_MA_x-opt-jms-dest			JMS_AMQP_MA_x_HYPHEN_opt_HYPHEN_jms_HYPHEN_dest					x-opt-jms-dest
+
+JMS_AMQP_NATIVE						JMS_AMQP_NATIVE													JMS_AMQP_NATIVE
+
+JMS_AMQP_MESSAGE_FORMAT				JMS_AMQP_MESSAGE_FORMAT											JMS_AMQP_MESSAGE_FORMAT
+
+									JMS_AMQP_ContentType
+
+BrowseMessage.java 
+==================
+									
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMS_AMQP_ACK_TYPE
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSCorrelationID
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSExpiration
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSMessageID
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSDeliveryMode
+com.indarsoft.hps.utl.MessageUtl.All properties name : breadcrumbId
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSPriority
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSXUserID
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSXGroupSeq
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSTimestamp
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSReplyTo
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSDestination
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSXGroupID
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSType
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSXDeliveryCount
+com.indarsoft.hps.utl.MessageUtl.All properties name : JMSRedelivered
+com.indarsoft.hps.utl.MessageUtl.All properties name : clientPort
+com.indarsoft.hps.utl.MessageUtl.All properties name : messageUUID
+com.indarsoft.hps.utl.MessageUtl.All properties name : clientIp
+com.indarsoft.hps.utl.MessageUtl.All properties name : CamelJmsDeliveryMode
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : JMSMessageID
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : JMSDeliveryMode
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : breadcrumbId
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : JMSPriority
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : JMSTimestamp
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : JMSDestination
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : JMSXDeliveryCount
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : clientPort
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : messageUUID
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : clientIp
+com.indarsoft.hps.utl.MessageUtl.JMS property exists : CamelJmsDeliveryMode
+com.indarsoft.hps.utl.MessageUtl.getAMQPMessageproperties type-->name-->value :  String  --> clientPort --> 56194
+com.indarsoft.hps.utl.MessageUtl.getAMQPMessageproperties type-->name-->value :  String  --> breadcrumbId --> ID:33aefc7e-5959-4296-9b8a-4a7813ef7760:1:2:1-1
+com.indarsoft.hps.utl.MessageUtl.getAMQPMessageproperties type-->name-->value :  String  --> messageUUID --> 2ecf5659-c2a1-4aa0-972c-bfe735be4e91
+com.indarsoft.hps.utl.MessageUtl.getAMQPMessageproperties type-->name-->value :  String  --> clientIp --> 127.0.0.1
+com.indarsoft.hps.utl.MessageUtl.getAMQPMessageproperties type-->name-->value :  Integer --> CamelJmsDeliveryMode --> 1
+com.indarsoft.hps.utl.MessageUtl.Application Properties : clientPort -> 56194
+com.indarsoft.hps.utl.MessageUtl.Application Properties : messageUUID -> 2ecf5659-c2a1-4aa0-972c-bfe735be4e91
+com.indarsoft.hps.utl.MessageUtl.Application Properties : breadcrumbId -> ID:33aefc7e-5959-4296-9b8a-4a7813ef7760:1:2:1-1
+com.indarsoft.hps.utl.MessageUtl.Application Properties : clientIp -> 127.0.0.1
+com.indarsoft.hps.utl.MessageUtl.Application Properties : CamelJmsDeliveryMode -> 1
+com.indarsoft.hps.utl.MessageUtl.AMQP Message Annotation : x-opt-jms-msg-type is byte value 0x05
+com.indarsoft.hps.utl.MessageUtl.AMQP Message Annotation : x-opt-to-type      is string value queue
+com.indarsoft.hps.utl.MessageUtl.AMQP Message Annotation : x-opt-jms-dest     is byte value 0x00									

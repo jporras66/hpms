@@ -1,0 +1,322 @@
+      *---------------------------------------------------------------*
+      *          i d e n t i f i c a t i o n   d i v i s i o n        *
+      *          =============================================        *
+      *---------------------------------------------------------------*
+       identification division. 
+      *-----------------------.    
+       program-id.      driver.
+       author.          fjavier.porras@gmail.com.           
+       date-written.    22/03/2015. 
+      *---------------------------------------------------------------*
+      *             e n v i r o n m e n t   d i v i s i o n           *
+      *             =======================================           *
+      *---------------------------------------------------------------*
+       environment division.
+      *--------------------.
+       configuration section.
+      *---------------------.
+       special-names.
+           decimal-point  is comma
+           alphabet alpha is native
+           alphabet beta  is ebcdic.
+       input-output section.
+      *--------------------.
+       file-control. 
+      * 
+      *---------------------------------------------------------------*
+      *                    d a t a   d i v i s i o n                  *
+      *---------------------------------------------------------------*
+       data division.
+      *-------------.
+       file section.
+      *------------.
+       working-storage section.
+      *-----------------------.
+       01 filler pic x(050)
+                 value  'pgm-driver-ws-start'.
+      *
+       01 pgm-name pic x(15) 
+                 value 'driver'.
+      *
+       01 commit-counter   pic 9(4) value 2000.
+       01 seconds-to-sleep pic 9(4) value 2.
+      *
+       01 w-data.
+          05 file-eof           pic 9.                
+             88 eof             value 1.              
+             88 neof            value 0.              
+          05 reposition         pic 9.                
+             88 rep-found       value 1.              
+             88 rep-nfound      value 0.              
+          05 full-current-date.
+             10 full-datetime.
+                15 f-date.
+                   25 f-year       pic 9(4) value zeros.
+                   25 f-month      pic 99   value zeros.
+                   25 f-day        pic 99   value zeros.
+                15  f-time.
+                   25 c-hour       pic 99   value zeros.
+                   25 c-minutes    pic 99   value zeros.
+                   25 c-seconds    pic 99   value zeros.
+                   25 c-sec-hund   pic 99   value zeros.
+             10 c-time-diff.
+                15 c-gmt-dir    pic x    value spaces.
+                15 c-hour       pic 99   value zeros.
+                15 c-minutes    pic 99   value zeros.
+      *
+       01 command-line-values.
+          05 msgcounter     pic 9(04) value 2000. 
+      *
+       01 i  pic 9(04) value zeros.
+       01 j  pic 9(04) value zeros.
+       01 k  pic 9(04) value zeros.
+       01 l  pic 9(04) value zeros.
+      * 
+      * ( 255 + 1)
+       01 filename  pic x(256) value spaces.
+       01 val             pic x(256) value spaces.       
+       01 err             pic x(100) value spaces. 
+      *
+       01 q_prgname    pic  x(30)  value spaces.
+       01 q_input      pic  x(101) value spaces.
+       01 q_output     pic  x(101) value spaces.
+       01 q_error      pic  x(101) value spaces.
+       01 q_timeout    pic  x(101) value spaces.
+      *
+
+       01 rc binary-short value zero.
+      *
+      * DBNAME/USERNAME/PASSWORD values defined in C-Style common.h
+      *
+       EXEC SQL BEGIN DECLARE SECTION END-EXEC.
+       01  DB-NAME                 PIC  X(51)   VALUE spaces.
+       01  DB-USERNAME             PIC  X(51)   VALUE spaces.
+       01  DB-PASSWORD             PIC  X(51)   VALUE spaces.
+       01  CURRENT-TIMESTAMP       PIC  X(31)   VALUE spaces.
+      *
+       EXEC SQL END DECLARE SECTION END-EXEC.
+
+       EXEC SQL INCLUDE SQLCA END-EXEC.                   
+      *  
+       01  filler pic x(050)
+                  value  'pgm-driver-ws-end'.
+      *
+       linkage section.
+       01 lnk-db-constr   pic x(101) value low-values.
+       01 lnk-db-username pic x(51)  value low-values.  
+       01 lnk-db-password pic x(51)  value low-values.      
+       01 lnk-queue-xml   pic x(51)  value low-values.       
+       01 errstatus pic x(101) value low-values.     
+      *
+      *---------------------------------------------------------------*
+      *               p r o c e d u r e   d i v i s i o n             *
+      *---------------------------------------------------------------*
+      *
+       procedure division using
+               by reference lnk-db-constr ,
+               by reference lnk-db-username ,
+               by reference lnk-db-password ,
+               by reference lnk-queue-xml ,
+               by reference errstatus.     
+      *       
+       1000-main.
+      *
+           move function current-date to full-current-date.
+           display 'start : ' pgm-name ' - '  full-datetime.
+      *
+      *     display "driver lnk-db          : " lnk-db-constr
+      *     display "driver lnk-db-username : " lnk-db-username
+      *     display "driver lnk-db-password : " lnk-db-password
+      *
+           accept val from environment "RESOURCES" end-accept
+           string val lnk-queue-xml x'00'
+                  delimited by spaces into filename
+           end-string
+      *    
+           move lnk-db-constr   to DB-NAME 
+           move lnk-db-username to DB-USERNAME
+           move lnk-db-password to DB-PASSWORD
+      *    
+           perform 9001-show-linkage
+      *
+      *
+      *    WHENEVER IS NOT YET SUPPORTED :(
+      *      EXEC SQL WHENEVER SQLERROR PERFORM db-error-trn END-EXEC.
+      *           
+      * Note : PostgreSQL configured to listen in port 5432
+      *        PGBOUNCER  configured to listen in port 6432  
+      *
+      *        DBNAME@HOST:PORT
+      *
+      *    DB-NAME that point to a local DB instance or a local connection  
+      *    pool as PGBOUNCER. 
+      *    In this case DB-NAME is defined in /etc/pgbouncer/pgbouncer.ini
+      *
+      *    MOVE  "HPS@localhost:5432"         TO   DBNAME. 
+      *    MOVE  "HPS@192.168.254.130:5432"   TO   DBNAME.
+      *    MOVE  "HPS-CP@127.0.0.1:6432"      TO   DBNAME.
+      *
+      *    HPS-CP is defined in /etc/pgbouncer/pgbouncer.ini
+      *
+      *    MOVE  "HPS-CP@127.0.0.1:6432"   TO   DBNAME.
+      *    MOVE  "hps"             TO   USERNAME.
+      *    MOVE  SPACE             TO   PASSWD.
+      *    MOVE  "password"        TO   PASSWD.
+      *
+           EXEC SQL
+               CONNECT :DB-USERNAME IDENTIFIED BY :DB-PASSWORD 
+               USING   :DB-NAME 
+           END-EXEC.
+           if sqlcode not = 0 
+               perform db-error-trn 
+               perform 3000-end
+           end-if.
+           EXEC SQL
+               SET NAMES 'UTF8'
+           END-EXEC.
+           EXEC SQL 
+               SELECT CURRENT_TIMESTAMP into :CURRENT-TIMESTAMP
+           END-EXEC.
+           DISPLAY "DB CURRENT_TIMESTAMP is " CURRENT-TIMESTAMP
+      *      
+           call 'configQueueCC' using
+                by reference filename,
+                by reference q_prgname,
+                by reference q_input, 
+                by reference q_output,
+                by reference q_error,
+                by reference q_timeout,
+                by reference errstatus 
+           returning rc      
+           on exception 
+              string 'can not find config file  :  configQueue' 
+              filename
+              into err
+              perform 3000-end
+           end-call.    
+      *    
+           perform 9001-show-queues
+           if rc not equal 0 then 
+              perform 3000-end
+           end-if   
+      *      
+           display 'driver about to call ... : ' q_prgname '.so'
+      *
+           call q_prgname using
+               by reference q_input ,     
+               by reference q_output ,
+               by reference q_error ,
+               by reference q_timeout ,               
+               by reference errstatus 
+           returning rc 
+           on exception 
+              string 'can not find program name : ' q_prgname
+              into err
+              perform 3000-end
+           end-call.     
+      *      
+           display 'driver after call q_prgname  rc is : ' rc 
+      *  
+           if rc not equal 0 then 
+              perform 3000-end
+           end-if
+      *   
+           perform 3000-end.
+      *        
+       1000-main-exit.
+           exit.
+      *
+       2000-msg.  
+      *           
+           if err = spaces then 
+              string 'bye !!! :-)'  
+              x'00' delimited by size into errstatus
+              move 0 to return-code    
+           else
+              string err
+              x'00' delimited by size into errstatus
+              move -1 to return-code
+           end-if.         
+      *        
+       2000-msg-exit.
+           exit.
+      *            
+       3000-end.  
+      *    
+           display 'end   : ' pgm-name ' - '  full-datetime.     
+           move function current-date to full-current-date                  
+           goback.    
+      *        
+       3000-end-exit.
+           exit. 
+      *  
+      * ======================================================================
+      *          
+       9001-show-linkage.  
+      *
+          display 'driver lnk-db-constr    : '
+          call 'display_str' using by reference lnk-db-constr end-call
+          display 'driver lnk-db-username  : '
+          call 'display_str' using by reference lnk-db-username end-call
+          display 'driver lnk-db-password  : ' 
+          call 'display_str' using by reference lnk-db-password end-call
+          display 'driver lnk-queue-xml    : ' 
+          call 'display_str' using by reference lnk-queue-xml end-call
+          display "driver lnk-queue-xml    : " 
+          call 'display_str' using by reference filename end-call
+          display 'driver errstatus        : ' errstatus .
+      *        
+       9001-show-linkage-exit.
+           exit.
+      *
+      * ======================================================================  
+      *       
+       9001-show-queues.  
+      *           
+           display 'driver q_prgname : ' q_prgname
+           display 'driver q_input   : ' q_input
+           display 'driver q_output  : ' q_output
+           display 'driver q_error   : ' q_error
+           display 'driver q_timeout : ' q_timeout
+           display 'driver errstatus : ' errstatus.
+      *        
+       9001-show-queues-exit.
+           exit.
+      *
+       db-disconnect.
+      *
+           EXEC SQL
+               DISCONNECT ALL
+           END-EXEC.
+      *
+       f-db-disconnect.
+           exit.         
+      *
+       db-error-trn.
+      *
+           string "errcode: "  sqlstate "-" sqlerrmc
+                  delimited by spaces into errstatus
+           end-string 
+           display "sqlcode: " sqlcode " " no advancing.
+           evaluate sqlcode
+              when  +10
+                 display "record not found"
+              when  -01
+                 display "connection falied"
+              when  -20
+                 display "internal error"
+              when  -30
+                 display "postgresql error"
+                 display "errcode: "  sqlstate
+                 display sqlerrmc
+      *          perform db-rollback
+              when  other
+                 display "undefined error"
+                 display "errcode: "  sqlstate
+                 display sqlerrmc
+           end-evaluate.
+      *
+       f-db-error-trn.
+      *
+           exit.
+      *

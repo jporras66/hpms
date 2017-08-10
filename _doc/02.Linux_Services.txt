@@ -1,0 +1,32 @@
+==========================================================================
+	Cobol interface for AMQP  - Centos 7.3 (fjavier.porras@gmail.com)
+==========================================================================
+							02.Linux_Services.txt
+==========================================================================
+
+Services :
+
+	postgresql:		postgresql-9.5.service			-	Postgresql 9.5 database
+	pgbouncer:		pgbouncer.service				-	Postgresql Connection Pooling
+	Apache2:		httpd.service					-	Apache http server
+	ActiveMQ:		N/A
+
+	stop : 		systemctl stop httpd.service ; 		systemctl stop postgresql-9.5.service ; 	systemctl stop pgbouncer.service
+				cd /opt/activemq-5.14.4/ ; ./bin/activemq stop 
+	
+	
+	start:		systemctl start httpd.service ; 	systemctl start postgresql-9.5.service ;  	systemctl start pgbouncer.service
+				cd /opt/activemq-5.14.4/ ; ./bin/activemq start
+	
+	
+	status:		systemctl status httpd.service ; 	systemctl status postgresql-9.5.service ;  	systemctl status pgbouncer.service
+				cd /opt/activemq-5.14.4/ ; ./bin/activemq status
+
+	 
+	 
+	systemctl status    <service_name>.service
+	systemctl enable    <service_name>.service
+	systemctl stop    	<service_name>.service
+	systemctl start   	<service_name>.service
+	systemctl restart   <service_name>.service
+	

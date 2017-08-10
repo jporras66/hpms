@@ -1,0 +1,278 @@
+==========================================================================
+	Cobol interface for AMQP  - Centos 7.3 (fjavier.porras@gmail.com)
+==========================================================================
+							01.Prerequisites.txt
+==========================================================================
+
+1.	GNU Cobol Installed and configured 
+		
+	-> 	GCC/G++ compiler and tools to compile and link
+	-> 	Boost C++ Libs 
+		yum install boost
+			
+	-> 	gnu-cobol 2.0 :
+				
+		-> 	Download & Install :	https://sourceforge.net/projects/open-cobol/files/gnu-cobol/2.0/
+		
+		Required packages :
+		===================
+			yum install libgmp
+			yum install libdb
+			yum install ncurses
+				
+		Execute ./configure --help for further details.
+				
+		My options : 
+		./configure --prefix=/opt/opencobol --with-gnu-ld --with-db
+				
+			configure: GnuCOBOL Configuration:
+			configure:  CC                gcc -std=gnu99
+			configure:  CFLAGS            -O2 -pipe -finline-functions -fsigned-char -Wall -Wwrite-strings -Wmissing-prototypes -Wno-format-y2k -U_FORTIFY_SOURCE
+			configure:  COB_CFLAGS        -I/opt/opencobol/include -pipe
+			configure:  LDFLAGS            -Wl,-z,relro,-z,now,-O1
+			configure:  COB_LDFLAGS
+			configure:  COB_LIBS          -L${exec_prefix}/lib -lcob -lm -lgmp -lncursesw -ldb -ldl
+			configure:  COB_CONFIG_DIR    ${datarootdir}/gnu-cobol/config
+			configure:  COB_COPY_DIR      ${datarootdir}/gnu-cobol/copy
+			configure:  COB_LIBRARY_PATH  ${exec_prefix}/lib/gnu-cobol
+			configure:  COB_MODULE_EXT    so
+			configure:  COB_OBJECT_EXT    o
+			configure:  COB_SHARED_OPT    -shared
+			configure:  COB_PIC_FLAGS     -fPIC -DPIC
+			configure:  COB_EXPORT_DYN    -Wl,--export-dynamic
+			configure:  COB_STRIP_CMD     strip --strip-unneeded
+			configure:  Dynamic loading:                             System
+			configure:  Use gettext for international messages:      yes
+			configure:  Use fcntl for file locking:                  yes
+			configure:  Use ncurses/pdcurses/curses for screen I/O:  ncursesw
+			configure:  Use Berkeley DB for ISAM I/O:                yes
+
+		make 
+		make install
+			
+		[root@sagitta opencobol]# /opt/opencobol/bin/cobc -version
+		cobc (GnuCOBOL) 2.0.0
+				
+				
+2.	Apache QPID C++ and QPID Proton libraries
+		
+	In Centos 7, both are availables in EPEL repository 
+			
+	->  How install ELEP reepository in Centos 7 :
+		
+		yum install epel-release
+		yum update 			
+		yum provides libqpidtypes*
+		yum provides libqpidmessaging*
+						
+		yum install qpid-cpp-client
+					
+	->  Download & Install (from source): 	http://qpid.apache.org/components/messaging-api/index.html
+											https://raw.githubusercontent.com/apache/qpid-cpp/master/INSTALL.txt
+								
+3.  ActiveMQ Latest Version
+
+	->Download & Install :	http://activemq.apache.org/download.html
+
+	Let's say for example, that the destination directory is /opt/activemq-5.14.4
+			
+		cd /opt/activemq-5.14.4/conf ; cp activemq.xml activemq.xml.orig
+		 
+		Replace activemq.xml with file provided in ./_doc/config/ActiveMQ/activemq.xml
+		
+			- Enables AMQP transport
+			- Also contains some Camel routes that are explained in the same file.
+			- Basic Patterns has been applied : (Round Robin, Message Router, ..)
+			- Locate :  <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">			
+			
+		Start ActiveMQ :
+			cd /opt/activemq-5.14.4/ ; ./bin/activemq start 
+			./bin/activemq status
+				INFO: Loading '/opt/activemq-5.14.4//bin/env'
+				INFO: Using java '/usr/bin/java'
+				ActiveMQ is running (pid '33077')
+			
+		Access ActiveMQ Console :
+			http://<ActiveMq_Server_IP>:8161/admin/
+			user : admin
+			pass : admin
+			
+		Shutdown ActiveMQ :
+			cd /opt/activemq-5.14.4/ ; ./bin/activemq stop 
+				
+3.  PostgreSQL Database 
+	
+	-> 	yum install postgresql95-devel postgresql95-server postgresql95-contrib
+	
+	-> 	phpPgAdmin is not mandatory, but is a very nice tool for postgresql administration tasks :
+		
+		yum instal httpd			<-- Apache Https Sever is needed 
+		yum install phpPgAdmin
+		
+		Note : 	Review https://www.unixmen.com/postgresql-9-4-released-install-centos-7/
+				How configure phpPgAdmin In CentOS 7/6.5/6.4	
+		
+		How Access to phpPgAdmin 
+			http://<Apache_Server_IP>/phpPgAdmin/
+		
+	3.1	Configure PostgreSQL for network access:
+		
+		cd /var/lib/pgsql/9.5/data
+		
+		copy  ./_doc/postgresql/pg_hba.conf to /var/lib/pgsql/9.5/data
+		
+			# TYPE  DATABASE        USER            ADDRESS                 METHOD
+			# "local" is for Unix domain socket connections only
+			#local  all             all                                     peer
+			local   all             postgres                                peer	<-- DB Local access without password from linux for db user postgres
+			#
+			#host   all             all             127.0.0.1/32            ident
+			host    all             all             127.0.0.1/32            md5
+			host    all             all             192.168.153.0/24        md5   	<-- Network access with password for all DB Users
+																						Add your own network/netmask to access from 
+		copy  ./_doc/postgresql/postgresql.conf to /var/lib/pgsql/9.5/data
+		
+			listen_addresses = '*'          # what IP address(es) to listen on;
+			port = 5432                             # (change requires restart)
+			max_connections = 500                   # (change requires restart)		<-- Maximum number of connections 
+
+		Restart Postgresql 
+			
+			systemctl restart  	postgresql-9.5.service
+			
+		==========================================
+		
+		systemctl enable   	postgresql-9.5.service
+		systemctl disable  	postgresql-9.5.service
+	
+		systemctl start    	postgresql-9.5.service
+		systemctl stop     	postgresql-9.5.service
+		systemctl restart  	postgresql-9.5.service
+		systemctl status   	postgresql-9.5.service
+
+	3.2	Verify connection and chnage postgres password :
+		
+		- From Linux box :
+		================
+			[root@sagitta data]# su - postgres
+			
+			bash-4.2$ psql -U postgres
+			postgres=# select now() ;
+				now
+				-------------------------------
+				2017-07-29 11:11:00.439792+02
+				(1 row)
+				
+			postgres=# ALTER ROLE postgres with password 'password' ; 	<-- Change password to postgres admin USER 
+				ALTER ROLE
+			postgres=# \q
+
+		
+	3.3	PostgreSQL Schema Script :
+
+		- [root@sagitta data]# su - postgres
+			-bash-4.2$ pwd
+			/var/lib/pgsql 
+			Transfer postgres-hps-db.sql and postgres-hps-objects.sql scripts here (for example)
+		  
+		- Create the schema owner (role) "hps" and give it rigths before execute the schema creation
+		
+			bash-4.2$ psql -U postgres
+			postgres=# \i postgres-hps-db.sql
+			postgres=# \q
+			
+		- Create the schema objects from the user "hps":
+		
+			bash-4.2$ psql -U hps -d HPS
+			Password for user hps:				<-- Verify password in postgres-hps-db.sql file 
+			psql (9.5.7)
+			Type "help" for help.
+			HPS=# \i postgres-hps-objects.sql
+			postgres=# \q
+		
+		Schema Scripts in ./_doc/config/postgresql
+		   
+		   
+4.	Install Open Cobol ESQL (Ocesql) Precompiler
+	
+	->	Open Cobol ESQL (Ocesql)	
+	
+		Download & Save : http://www.osscons.jp/osscobol/files?action=cabinet_action_main_download&block_id=414&room_id=21&cabinet_id=11&file_id=313&upload_id=594
+	
+	To install Ocesql:
+
+		tar xvfz ocesql-1.1.0.tar.gz
+		cd ocesql-1.1.0
+		
+		./configure --prefix=/opt/ocesql	<-- Will be installed here
+		make
+		make install
+		
+		[root@sagitta bin]# pwd
+		/opt/ocesql/bin
+		
+		[root@sagitta bin]# ./ocesql
+		Open Cobol ESQL (Ocesql)
+		Version 1.1.0 ..
+
+
+		- !!!! IMPORTANT !!!! 	ocesql does not work rigth with lowercase variables, so it is very important
+								that all EXEC SQL sentences were in "UPPERCASE"
+								
+5.	PGBouncer - PostgreSQL Connection Pooling
+
+	- Not mandatory but desiderable for high load  
+	- To install pgbouncer:
+	
+		yum install pgbouncer
+
+	- Config directory for pgbouncer is : /etc/pgbouncer
+		
+	5.1 Notes :	https://opensourcedbms.com/dbms/setup-pgbouncer-connection-pooling-for-postgresql-on-centosredhatfedora/
+
+	5.2 Rename pgbouncer.ini to pgbouncer.ini.orig
+		 
+		 Copy  pgbouncer.ini from ./_doc/config/pgbouncer to /etc/pgbouncer
+		 Copy  userlist.txt  from ./_doc/config/pgbouncer to /etc/pgbouncer
+		 
+	5.3 Verify and Change pgbouncer.ini
+
+		[databases]
+		template1 = host=sagitta port=5432 dbname=template1		<-- change hostname for your postgresql hostname
+		HPS-CP    = host=sagitta port=5432 dbname=HPS			<-- HPS is the PostgreSQL DB that we have created previosly
+																	HPS-CP will be the connection pooling name for HPS 
+		; use custom pool sizes
+		nondefaultdb = pool_size=100 reserve_pool_size=10
+	
+		[pgbouncer]
+		#logfile = /var/log/postgresql/pgbouncer.log
+		logfile = /var/log/pgbouncer/pgbouncer.log
+		#pidfile = /var/run/postgresql/pgbouncer.pid
+		pidfile = /var/run/pgbouncer/pgbouncer.pid
+		
+		; total number of clients that can connect
+		max_client_conn = 500 									<-- This value is high 
+	
+		mkdir -p /var/log/pgbouncer
+		chown -R pgbouncer:pgbouncer /var/log/pgbouncer
+
+	5.4 pgbouncer service :
+
+		systemctl enable   pgbouncer.service
+		systemctl disable  pgbouncer.service
+		systemctl start    pgbouncer.service
+		systemctl stop     pgbouncer.service
+		systemctl restart  pgbouncer.service
+		systemctl status   pgbouncer.service
+
+	5.5 Test Connection :
+	
+		[root@sagitta pgbouncer]# psql -h sagitta -p 6432 -d HPS-CP -U hps
+		Password for user hps:
+		psql (9.5.6)
+		Type "help" for help.
+
+		HPS-CP=# select * from messages ;
+		 msg_id | msg_uuid | msg_mimetype | msg_content | msg_len
+		--------+----------+--------------+-------------+---------
+		(0 rows)

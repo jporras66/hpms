@@ -1,0 +1,36 @@
+==========================================================================
+	Cobol interface for AMQP  - Centos 7.3 (fjavier.porras@gmail.com)
+==========================================================================
+							01.Build_cob4amqp.txt
+==========================================================================
+
+	
+Building Examples and Library
+ 
+	- Create an user:group : 	hpms:hpms
+		/home/hpms
+		mkdir -p /home/hpms/apl/cob4amqp 
+		
+	- Copy the directory structure to your linux box.  
+	  
+	- Review environment variables in iniamqpbrk.sh
+	    
+		Load  iniamqmng.sh
+		$. iniamqmng.sh (or update your .bash_profile or .profile) 
+		
+	- Build :  
+		
+		cd $APL ; make clean ; make all
+
+	- Configure Broker Connection  :
+	
+		../resources/activemq_connection.xml 		
+
+	- Configure Queues :
+	
+		Config files in ../resources/request_*.xml , response_*.xml, tiemout_*.xml  
+		Values must be defined in ActiveMQ config file : /opt/activemq-5.14.4/conf/activemq.xml 
+		
+	- Configure PostgreSQL and PGBouncer Connection :
+	
+		Config files in ../resources/db_connection.*.xml  

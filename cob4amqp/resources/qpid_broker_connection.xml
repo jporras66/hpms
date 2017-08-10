@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<BrokerConnection> 
+		<provider>QPID 6.0.4</provider>
+		<host>localhost</host>
+		<transport>tcp</transport>
+		<port>5672</port>
+		<user>admin</user> 
+		<password>admin</password>
+</BrokerConnection>	

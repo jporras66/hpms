@@ -1,0 +1,47 @@
+================================================================================================
+			TEST client for High Performance Messaging System  (fjavier.porras@gmail.com) 
+================================================================================================
+									hpms-client-deploy-how2.txt
+================================================================================================
+
+1. 	Before deployment of the software of this project, it's necessary to configure, build and install:
+
+	-> cob4amqp 
+	
+		Review _doc directory for detailed instructions how to install the required base software 
+		(Compilers, ActiveMQ, PostgreSQL, PGBouncer, etc ) .
+	
+	-> hpms-server
+
+		Review _doc directory for detailed instructions how to deploy
+
+	
+2. 	Install the client in a linux box as follows : 
+
+	-> 	Create an user:group : 	hpms:hpms with home dir /home/hpms
+		
+	->	As hpms user, create the following directories :
+		
+		mkdir -p /home/hpms/apl/client/config
+		mkdir -p /home/hpms/apl/client/data/2send
+		mkdir -p /home/hpms/apl/client/data/received
+ 		mkdir -p /home/hpms/apl/client/lib
+ 		mkdir -p /home/hpms/apl/client/log
+ 
+  	-> 	Copy ./target/client-1.0.0.jar 	to /home/hpms/apl/client/
+  	  		 ./target/config			to /home/hpms/apl/client/config
+  	  		 ./target/lib				to /home/hpms/apl/client/lib
+  	  		 ./target/data/2send		to /home/hpms/apl/client/data/2send
+  	  		 ./target/data/received		to /home/hpms/apl/client/data/received
+  	  		  	  		 
+  	-> 	Copy ./*.sh						to /home/hpms/apl/client/
+
+	-> 	cd /home/hpms/apl/client ; chmod 744 *.sh 	 
+
+	-> Review environment variables in inihpmsclient.sh
+	    
+		Load  inihpmsclient.sh
+		$. inihpmsclient.sh (or update your .bash_profile or .profile) 	
+		
+		
+				Best Regards. Javier 

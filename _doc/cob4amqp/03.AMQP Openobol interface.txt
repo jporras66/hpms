@@ -1,0 +1,190 @@
+==========================================================================
+	Cobol interface for AMQP  - Centos 7.3 (fjavier.porras@gmail.com)
+==========================================================================
+						03.AMQP Openobol interface.txt
+==========================================================================
+
+->	Note  : PostgreSQL and/or PGBouncer are needed for these utilities
+->  Review:	./_doc/cob4amqp.odp for an explanation of the workflow 
+->	C++ & Cobol  :  cd $APL/cob4brk :
+
+=====================
+1. Receiving Messages
+=====================
+	
+	[javier@sagitta cob4brk]$ cat request.sh
+	#!/bin/bash
+	#
+	# Program chaining :
+	#
+	# request (main) --> driver.o (driver.cob) --> req_trx.so (req_trx.cob)
+	#
+	cat /dev/null > request_1.log
+	#
+	./request db_connection.xml broker_connection.xml request_1.xml 1>>request_1.log 2>>request_1.log &
+	#
+	
+	[javier@sagitta cob4brk]$ cat ../resources/request_1.xml
+	<?xml version="1.0" encoding="ISO-8859-1"?>
+	<Queue>
+			<!--
+			REQ.SV1.C1      REQ is request
+							SV1 means RESOLVER_1 (node), that has C1, C2, .. , CN input queues
+							Queue broker (ActiveMQ/QPID) populates those request queues (Round-Robin)  from REQ.SV1
+			prgname =       req_trx is an .so object, that listen in an input queue
+									request.sh -> request (main) -> driver.o (driver.cob) -> req_trx.so (req_trx.cob)
+			input   =       input  queue
+			output  =       output queue to send requests to the remote HOST.
+			timeout =       timeout queue, where req_trx schedules a entry, to be processed by timer.sh
+			-->
+		<prgname>req_trx</prgname>
+			<input>REQ.SV1.C1</input>
+			<output>REQ.SV1.HOST</output>
+			<error>REQ.SV1.ERROR</error>
+			<timeout>REQ.SV1.TIMEOUT</timeout>
+	</Queue>
+
+	Let's execute ./producer to enque some messages 
+		[javier@sagitta amqpbrk]$ pwd
+		/home/javier/apl/cob2amqp/amqpbrk
+		./producer ActiveMQ_connection.xml REQ.SV1.C1 127.0.0.1 8080 60
+
+	Let's execute ./request.sh to receive messages : 
+		./request.sh
+
+		Example : 
+		=========
+		req_trx.cob     q_msglen      : +00036
+		req_trx.cob     q_input       : REQ.SV1.C1								<-- Message has been taken from this queue
+		req_trx.cob     q_msgid       : 949d94e3-c60d-40b3-96db-beb15cf7d34e
+		req_trx.cob     q_messageUUID : 949d94e3-c60d-40b3-96db-beb15cf7d34e
+		req_trx.cob     q_message     : HELLO world 8 !!
+		req_trx.cob     q_mimetype    : text/plain
+		req_trx.cob     q_num         : +00004
+		req_trx.cob     q_properties  : apl_message_type=5 clientIp=127.0.0.1 clientPort=8080 messageUUID=949d94e3-c60d-40b3-96db-beb15cf7d34e
+		req_trx.cob     errstatus     :
+		
+		req_trx.cob     - amqpSendMessageCC before								<-- Message has been processed to this queue
+		req_trx.cob     q_msglen    : +00016
+		req_trx.cob     q_output    : REQ.SV1.HOST
+		req_trx.cob     q_message   : HELLO world 8 !!
+		req_trx.cob     errstatus   :
+
+	ActiveMQ Console 
+	================
+	Name			 	Number Of Pending Messages   	Number Of Consumers   	Messages Enqueued   	Messages Dequeued 
+	REQ.SV1.C1 			0 								1 						60 						60
+	REQ.SV1.HOST 		60 								0 						60 						0
+	REQ.SV1.TIMEOUT 	0 								1 						60 						60 	
+	REQ.SV1.TIMEOUT_1 	30 								0 						30 						0 
+	REQ.SV1.TIMEOUT_2 	30 								0 						30 						0	
+		
+	- Incoming messages to REQ.SV1.HOST will be dequeued by moveMessage.sh ( see hpms-server project ) or trough the ActiveMQ console
+      and moved to RES.SV1.HOST	
+	- Incoming messages to REQ.SV1.TIMEOUT has been dequeued by Camel and splitted into REQ.SV1.TIMEOUT_1, REQ.SV1.TIMEOUT_2
+	
+==================================
+2. Simulating a response from Host
+==================================
+
+	After moving 2 messages from REQ.SV1.HOST to RES.SV1.HOST trough the ActiveMQ console, Camel moves those messages to RES.SV1.C1, RES.SV1.C2
+	
+	- Incoming messages to REQ.SV1.HOST has been dequeued by Camel a splitted into RES.SV1.C1, RES.SV1.C2	
+	
+	ActiveMQ Console 
+	================
+	Name			 	Number Of Pending Messages   	Number Of Consumers   	Messages Enqueued   	Messages Dequeued 
+	REQ.SV1.C1 			0 								1 						60 						60
+	REQ.SV1.HOST 		58 								0 						60 						2
+	RES.SV1.HOST 		0 								1 						2 						2
+	RES.SV1.C1 			1 								0 						1 						0	
+	RES.SV1.C2 			1 								0 						1 						0
+
+
+===========================
+3. Processing the response 
+===========================
+
+	[javier@sagitta cob4brk]$ cat response.sh
+	#!/bin/bash
+	#
+	# Program chaining :
+	#
+	# response (main) --> driver.o (driver.cob) --> res_trx.so (res_trx.cob)
+	#
+	#
+	cat /dev/null > response_1.log
+	#
+	./response db_connection.xml broker_connection.xml response_1.xml 1>>response_1.log 2>>response_1.log &
+	#
+	
+	
+	[javier@sagitta cob4brk]$ cat ../resources/response_1.xml
+	<?xml version="1.0" encoding="ISO-8859-1"?>
+	<Queue>
+			<!--
+			RES.SV1.C1      RES is response
+							SV1 means RESOLVER_1 (node), that has C1, C2, .. , CN input queues from HOST
+							Queue broker (ActiveMQ/QPID) populates those response queues (Round-Robin) from RES.SV1.HOST
+							RES.SV1.HOST receives responses from HOST
+			prgname =       res_trx is an .so object, that listen in an response queue
+									response.sh -> response (main) -> driver.o (driver.cob) -> res_trx.so (res_trx.cob)
+			input   =       input  queue
+			output  =       Response queue for RESOLVER_1.
+			timeout =       No timeout defined
+			-->
+		<prgname>res_trx</prgname>
+			<input>RES.SV1.C1</input>
+			<output>RES.SV1</output>
+			<error>RES.SV1.ERROR</error>
+			<timeout>N/A</timeout>
+	</Queue>
+
+	Let's execute ./response.sh : 
+		./response.sh
+		
+		Example : 
+		=========	
+		res_trx.cob     q_msglen      : +00036
+		res_trx.cob     q_input       : RES.SV1.C1						<-- Message has been taken from this queue
+		res_trx.cob     q_msgid       :
+		res_trx.cob     q_messageUUID : 04d186f2-88ee-43f3-8aa0-c6a548d29895
+		res_trx.cob     q_message     : HELLO world 0 !!
+		res_trx.cob     q_mimetype    : text/plain
+		res_trx.cob     q_num         : +00004
+		res_trx.cob     q_properties  : apl_message_type=5 clientIp=127.0.0.1 clientPort=8080 messageUUID=04d186f2-88ee-43f3-8aa0-c6a548d29895
+		res_trx.cob     errstatus     :
+
+		res_trx.cob     - amqpSendMessageCC before
+		res_trx.cob     q_msglen    : +00016
+		res_trx.cob     q_queue     : RES.SV1							<-- Message has been processed to this queue
+		res_trx.cob     q_message   : HELLO world 0 !!
+		res_trx.cob     errstatus   :
+
+	ActiveMQ Console 
+	================
+	Name			 	Number Of Pending Messages   	Number Of Consumers   	Messages Enqueued   	Messages Dequeued 
+	REQ.SV1.C1 			0 								1 						60 						60
+	REQ.SV1.HOST 		58 								0 						60 						2
+	RES.SV1.HOST 		0 								1 						2 						2
+	RES.SV1.C1 			1 								1 						1 						1	
+	RES.SV1.C2 			1 								0 						1 						0
+	RES.SV1 			0 								1 						1 						1	
+	
+============
+4. Timeout 
+============
+
+	- Timeout processing is executed by timeout.sh ( included in hpms-server project ), and implemented in java
+	  OpenCobol is not thread safe 
+
+	- Incoming messages to REQ.SV1.TIMEOUT has been dequeued by Camel and splitted into REQ.SV1.TIMEOUT_1, REQ.SV1.TIMEOUT_2
+	
+	ActiveMQ Console 
+	================
+	Name			 	Number Of Pending Messages   	Number Of Consumers   	Messages Enqueued   	Messages Dequeued 
+	REQ.SV1.C1 			0 								1 						60 						60
+	REQ.SV1.HOST 		58 								0 						60 						2
+	REQ.SV1.TIMEOUT 	0 								1 						60 						60 	
+	REQ.SV1.TIMEOUT_1 	30 								0 						30 						0 
+	REQ.SV1.TIMEOUT_2 	30 								0 						30 						0	

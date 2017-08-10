@@ -1,0 +1,385 @@
+      *---------------------------------------------------------------*
+      *          i d e n t i f i c a t i o n   d i v i s i o n        *
+      *          =============================================        *
+      *---------------------------------------------------------------*
+       identification division. 
+      *-----------------------.    
+       program-id.      res_trx.
+       author.          fjavier.porras@gmail.com.           
+       date-written.    21/10/2016.
+      *---------------------------------------------------------------*
+      *             e n v i r o n m e n t   d i v i s i o n           *
+      *             =======================================           *
+      *---------------------------------------------------------------*
+       environment division.
+      *--------------------. 
+       configuration section.
+      *---------------------.
+       special-names.
+           decimal-point is comma
+           alphabet alpha is native
+           alphabet beta  is ebcdic.
+       input-output section.
+      *--------------------.
+       file-control.        
+      * 
+      *---------------------------------------------------------------*
+      *                    d a t a   d i v i s i o n                  *
+      *---------------------------------------------------------------*
+       data division.
+      *-------------.
+       file section.
+      *------------.      
+      * 
+       working-storage section.
+      *-----------------------.
+       01 filler pic x(050)
+                 value  'pgm-res-trx-ws-start'.
+       01 pgm-name pic x(15) 
+                 value 'res_trx.cob'.
+      *
+       01 w-data.
+          05 file-eof           pic 9.                
+             88 eof             value 1.              
+             88 neof            value 0.              
+          05 reposition         pic 9.                
+             88 rep-found       value 1.              
+             88 rep-nfound      value 0.              
+          05 full-current-date.
+             10 full-datetime.
+                15 f-date.
+                   25 f-year       pic 9(4) value zeros.
+                   25 f-month      pic 99   value zeros.
+                   25 f-day        pic 99   value zeros.
+                15  f-time.
+                   25 c-hour       pic 99   value zeros.
+                   25 c-minutes    pic 99   value zeros.
+                   25 c-seconds    pic 99   value zeros.
+                   25 c-sec-hund   pic 99   value zeros.
+             10 c-time-diff.
+                15 c-gmt-dir    pic x    value spaces.
+                15 c-hour       pic 99   value zeros.
+                15 c-minutes    pic 99   value zeros.
+      *
+       01 i  pic 9(04) value zeros.
+       01 j  pic 9(04) value zeros.
+       01 k  pic 9(04) value zeros.
+       01 err pic  x(100).   
+      *
+      * =============================================== 
+      *
+           copy "message.cpy" replacing leading
+           ==prefix-== BY ==q_==.
+      *       
+      * ===============================================  
+      * 
+       01 rc     binary-short value zero. 
+       01 len     binary-short value zero.
+      *
+      *
+      * !!! IMPORTANT !!!! ocesql does not work rigth with lowercase variables, 
+      * so it is very important that all EXEC SQL sentences were in "UPPERCASE"
+      *
+       EXEC SQL BEGIN DECLARE SECTION END-EXEC.
+       01  CURRENT-TIMESTAMP       PIC  X(31)   VALUE SPACES.
+       01  MSG-ID                  PIC  9(14)   VALUE 0.
+       01  MSG-UUID                PIC  X(61)   VALUE LOW-VALUES.
+       01  MSG-MIMETYPE            PIC  X(51)   VALUE LOW-VALUES.
+       01  MSG-CONTENT             PIC  X(4096) VALUE LOW-VALUES.
+       01  MSG-LEN                 PIC  9(4)    VALUE 0.
+      *
+       01  UUID                    PIC  X(61)   VALUE LOW-VALUES.
+       01  TIMESTAMP               PIC  X(29)   VALUE LOW-VALUES. 
+      *
+       EXEC SQL END DECLARE SECTION END-EXEC.
+
+       EXEC SQL INCLUDE SQLCA END-EXEC.                   
+      *
+       01  filler pic x(050)
+                  value  'pgm-res-trx-ws-end'.
+      *
+       linkage section.
+       01 lnk_input      pic  x(101).
+       01 lnk_output     pic  x(101).
+       01 lnk_error      pic  x(101).
+       01 lnk_timeout pic  x(101).      
+       01 errstatus pic  x(101).        
+      *
+      *---------------------------------------------------------------*
+      *               p r o c e d u r e   d i v i s i o n             *
+      *---------------------------------------------------------------*
+      *
+       procedure division using
+               by reference lnk_input ,     
+               by reference lnk_output ,
+               by reference lnk_error ,
+               by reference lnk_timeout ,               
+               by reference errstatus.     
+      *       
+       1000-main.
+      *
+           move function current-date to full-current-date.
+           display 'start : ' pgm-name ' - '  full-datetime. 
+           move lnk_input    to q_input
+           move lnk_output   to q_output
+           move lnk_error    to q_error
+           move lnk_timeout  to q_timeout.     
+      * 
+           perform 9001-show-linkage
+      *       
+           perform 2100-queue-read thru 2100-queue-read-exit
+           until eof ;
+      *           
+           perform 3000-end.     
+      *        
+       1000-main-exit.
+           exit.
+      *       
+       2100-queue-read. 
+      * 
+           display pgm-name " - amqpRecvMessageCC before   "
+           move low-values to q_message q_mimetype q_properties 
+                              errstatus
+      *
+      * rc contains message length (>= 0) or -1 (error) 
+      * 
+      * int16_t amqpRecvMessageCC ( const char *queue, char *msgid, char *msg, char *mimetype, PropertyList *propertylist, char *errstatus  )
+      *
+           call 'amqpRecvMessageCC' using   
+                by reference q_input,
+                by reference q_msgid,
+                by reference q_message,
+                by reference q_mimetype,            
+                by reference q_properties,
+                by reference errstatus
+           returning len
+           on exception 
+              string 'can not find program name :  amqpRecvMessageCC' 
+              into err
+              perform 3000-end
+           end-call.                    
+           if len < 0 then 
+              display pgm-name " - amqpRecvMessageCC error rc is : " len
+              perform 3000-end
+           end-if.
+           move len to MSG-LEN.
+      *
+      *  int16_t getPropertyValueCC  ( const PropertyList *propertylist, const char *property, char *value  )
+      *  
+           string MESSAGEUUID x'00' into q_dummy end-string
+           call 'getPropertyValueCC'  using
+                by reference q_properties,
+                by reference q_dummy,
+                by reference q_messageUUID
+           returning len
+           on exception 
+              string 'can not find program name :  getPropertyValueCC' 
+              into err
+              perform 3000-end
+           end-call.
+      *
+           perform 9002-show-msg.           
+      *
+      *    CALL to a paragraph to perform : Business Logic      
+      *
+           string q_messageUUID(1:len) x'00' into MSG-UUID end-string
+           move q_mimetype to MSG-MIMETYPE
+           move q_message     to MSG-CONTENT
+      *
+           EXEC SQL
+               SELECT
+               msg_id, msg_mimetype, msg_content, msg_len   
+               INTO 
+               :MSG-ID, :MSG-MIMETYPE,:MSG-CONTENT,:MSG-LEN
+               FROM messages where
+               msg_uuid = :MSG-UUID
+           END-EXEC.
+      *
+      * Write to output queue (or exit)
+      *
+           if sqlcode = 0 then 
+               perform 2150-check-workflow
+               move q_output to q_queuename
+               perform 2100-queue-write
+           else
+               display pgm-name " WARNING - message not found : "  
+               MSG-UUID 
+               move q_error to q_queuename
+               perform 2100-queue-write 
+           end-if.
+      *
+           perform db-commit-work .
+      *
+       2100-queue-read-exit.
+           exit.
+      *
+      * 
+       2150-check-workflow.  
+      *
+           EXEC SQL
+               SELECT timestamp INTO :TIMESTAMP
+               FROM timeout where
+               uuid = :MSG-UUID
+           END-EXEC.
+      *
+      * if found then delete the timeout and continue 
+      * normal workflow
+      *
+           if sqlcode = 0 then   
+              EXEC SQL
+                 DELETE FROM timeout WHERE
+                 uuid = :MSG-UUID
+              END-EXEC
+      *    else
+      *
+      * if not found the message has been time-out so 
+      * timeout workflow will be followed
+      *    
+           end-if. 
+      *        
+       3000-check-workflow-exit.
+           exit. 
+      *        
+       2100-queue-write.
+      * 
+           display pgm-name " - amqpSendMessageCC before     "
+           move MSG-LEN to q_msglen            
+           perform 9003-show-msg.           
+      *
+      * Writes to output_queue or error queue
+      *
+      *
+           call 'amqpSendMessageCC' using    
+                by reference q_queuename,
+                by reference q_message,
+                by value q_msglen,
+                by reference q_mimetype,
+                by reference q_properties,
+                by reference errstatus
+           returning rc
+           on exception 
+              string 'can not find program name :  amqpSendMessageCC' 
+              into err
+              perform 3000-end
+           end-call.                    
+           if rc < 0 then 
+              display "res_trx - amqpSendMessageCC error rc is : " 
+              rc
+              perform 3000-end
+           end-if.      
+      * 
+       2100-queue-write-exit.
+           exit.           
+      *             
+      * ========================================================================================
+      * 
+       3000-end.  
+      *    
+           display 'end   : ' pgm-name ' - '  full-datetime.              
+           perform 3100-msg
+           perform db-rollback   
+           move function current-date to full-current-date                  
+           goback.    
+      *        
+       3000-end-exit.
+           exit. 
+      * 
+       3100-msg.  
+      *           
+           if err = spaces then 
+              string 'bye !!! :-)'  
+              x'00' delimited by size into errstatus
+              move 0 to return-code    
+           else
+              string err
+              x'00' delimited by size into errstatus
+              move -1 to return-code
+           end-if.         
+      *        
+       3100-msg-exit.
+           exit.
+      *             
+      * ========================================================================================
+      *          
+       9001-show-linkage.  
+      *           
+           display pgm-name ' q_input   : ' q_input
+           display pgm-name ' q_output  : ' q_output
+           display pgm-name ' q_error   : ' q_error
+           display pgm-name ' q_timeout : ' q_timeout
+           display pgm-name ' errstatus : ' errstatus.
+      *        
+       9001-show-linkage-exit.
+           exit.
+      *          
+       9002-show-msg.  
+      *           
+           display pgm-name ' q_msglen      : ' len      
+           display pgm-name ' q_input       : ' q_input
+           display pgm-name ' q_msgid       : ' q_msgid
+           display pgm-name ' q_messageUUID : ' q_messageUUID
+           display pgm-name ' q_message     : ' q_message
+           display pgm-name ' q_mimetype    : ' q_mimetype 
+           display pgm-name ' q_num         : ' q_num
+           display pgm-name ' q_properties  : ' q_list
+           display pgm-name ' errstatus     : ' errstatus.
+      *        
+       9002-show-msg-exit.
+           exit.
+      *
+       9003-show-msg.  
+      *           
+           display pgm-name ' q_msglen    : ' q_msglen      
+           display pgm-name ' q_queue     : ' q_queuename
+           display pgm-name ' q_message   : ' q_message            
+           display pgm-name ' errstatus   : ' errstatus.
+      *        
+       9003-show-msg-exit.
+           exit.
+      *  
+      * ========================================================================================
+      *
+       db-commit-work.
+      *
+           EXEC SQL 
+               COMMIT WORK
+           END-EXEC.
+      *
+       f-db-commit-work.
+           exit.
+      *
+       db-rollback.
+      *
+           EXEC SQL 
+               ROLLBACK
+           END-EXEC.
+      *
+       f-db-rollback.
+           exit.      
+      *
+       db-error-trn.
+      *
+           display "sqlcode: " sqlcode " " no advancing.
+           evaluate sqlcode
+              when  +10
+                 display "record not found"
+              when  -01
+                 display "connection falied"
+              when  -20
+                 display "internal error"
+              when  -30
+                 display "postgresql error"
+                 display "errcode: "  sqlstate
+                 display sqlerrmc
+              when  other
+                 display "undefined error"
+                 display "errcode: "  sqlstate
+                 display sqlerrmc
+           end-evaluate.
+      *
+           perform db-rollback.
+      *
+       f-db-error-trn.
+      *
+           exit.
+      *      

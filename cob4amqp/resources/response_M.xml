@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Queue>
+    <prgname>res_trx</prgname>
+	<input>RES.SV1.CM</input>  
+	<output>RES.SV1</output>
+	<error>RES.SV1.ERROR</error>
+	<timeout>N/A</timeout>
+</Queue>

@@ -1,0 +1,19 @@
+==========================================================================
+	03.Build.txt  - Centos 7.3 (fjavier.porras@gmail.com)
+==========================================================================
+					How Build and Deploy the software
+==========================================================================
+
+
+1.	Build cob4amqp 
+
+	Follow intrunction in directory _doc/cob4amqp 
+
+2.	Build hpms-server 
+
+	Follow intrunction in directory _doc/hpms-server 
+
+3.	Build hpms-client 
+
+	Follow intrunction in directory _doc/hpms-client
+ 

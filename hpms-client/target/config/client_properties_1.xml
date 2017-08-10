@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+	host :  				Node name or IP where hpms-server is running
+	port :  				Node port where the sockect is listening
+	maxBuffer :  			Max message buffer length 
+	maxInnerQueueLength :  	Number of defaults message to be created in a internal queue (BlockingQueue) for asynchronous client send/receive
+	clientName :			Client name 
+-->
+<ClientProperties>
+	<ServerConnection>  
+		<host>192.168.153.3</host>
+		<port>5555</port>
+		<maxBuffer>4096</maxBuffer>			
+	</ServerConnection>
+	<!-- Number of defaults message to be created in internal queues (BlockingQueue) for asynchronous client send/receive -->		
+	<maxInnerQueueLength>4096</maxInnerQueueLength>
+	<clientName>test-client-01</clientName>
+</ClientProperties>

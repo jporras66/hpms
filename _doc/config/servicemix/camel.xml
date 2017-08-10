@@ -1,0 +1,108 @@
+<beans
+  xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans    http://www.springframework.org/schema/beans/spring-beans.xsd
+                      http://activemq.apache.org/schema/core         http://activemq.apache.org/schema/core/activemq-core.xsd 
+                      http://camel.apache.org/schema/spring          http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <!-- Apache ActiveMQ broker -->
+    <bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+        <!-- <property name="brokerURL" value="tcp://localhost:61616"/> -->
+        <property name="brokerURL" value="amqp://0.0.0.0:5672"/>
+    </bean>
+    
+
+    <!-- Apache QPID  broker 
+    <bean id="jmsConnectionFactory" class="org.apache.qpid.jms.JmsConnectionFactory">
+      <property name="remoteURI" value="amqp://localhost:5672" />
+      <property name="username" value="admin"/>
+      <property name="password" value="admin"/>
+    </bean>
+    -->
+        
+    <broker:broker useJmx="false" persistent="false" brokerName="localhost">
+        <broker:transportConnectors>
+            <!-- <broker:transportConnector uri="tcp://localhost:61616"/> -->
+            <!-- <transportConnector name="amqp" uri="amqp://0.0.0.0:5672??maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/> -->
+            <broker:transportConnector name="amqp" uri="amqp://0.0.0.0:5672??maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+        </broker:transportConnectors>
+    </broker:broker>
+
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+
+        <route>
+            <from uri="activemq:queue:CLIENT.127.0.0.1.IN"/>
+            <to   uri="activemq:queue:REQ.DISPATCHER"/>
+        </route>
+        <route>
+            <from uri="activemq:queue:CLIENT.192.168.254.129.IN"/>
+            <to   uri="activemq:queue:REQ.DISPATCHER"/>
+        </route>        
+
+        <route>
+            <from uri="activemq:queue:RES.SV1"/>
+            <to   uri="activemq:queue:RES.DISPATCHER"/>
+        </route>
+
+        <route>
+            <from uri="activemq:queue:RES.DISPATCHER"/>
+            <choice>
+                <when>
+                    <simple>${header.clientIp} contains '192.168.254.129'</simple>
+                    <to uri="activemq:queue:CLIENT.192.168.254.129.OUT"/>
+                </when>
+                <when>
+                    <simple>${header.clientIp} contains '127.0.0.1'</simple>
+                    <to uri="activemq:queue:CLIENT.127.0.0.1.OUT"/>
+                </when>
+                <otherwise>
+                    <to uri="activemq:queue:RES.DISPATCHER.ERROR"/>
+                    <stop/>
+                </otherwise>
+            </choice>
+        </route>
+
+        <route>
+            <from uri="activemq:queue:REQ.DISPATCHER"/>
+            <loadBalance>       
+                <roundRobin/> 
+                <to uri="activemq:queue:REQ.SV1"/>       
+                <to uri="activemq:queue:REQ.SV2"/>
+                <!-- <to uri="activemq:queue:REQ.SV3"/> -->
+            </loadBalance>
+        </route>
+
+        <route>
+            <from uri="activemq:queue:REQ.SV1"/>
+            <loadBalance>
+                <roundRobin/>
+                <to uri="activemq:queue:REQ.SV1.C1"/>
+                <to uri="activemq:queue:REQ.SV1.C2"/>
+                <to uri="activemq:queue:REQ.SV1.C3"/>
+            </loadBalance>
+        </route>
+
+        <route>
+            <from uri="activemq:queue:REQ.SV1.TIMEOUT"/>
+            <loadBalance>
+                <roundRobin/>
+                <to uri="activemq:queue:REQ.SV1.TIMEOUT_1"/>
+                <to uri="activemq:queue:REQ.SV1.TIMEOUT_2"/>
+                <!-- <to uri="activemq:queue:REQ.SV1.TIMEOUT_3"/> -->
+            </loadBalance>
+        </route>
+
+        <route>
+            <from uri="activemq:queue:RES.SV1.HOST"/>
+            <loadBalance>
+                <roundRobin/>
+                <to uri="activemq:queue:RES.SV1.C1"/>
+                <to uri="activemq:queue:RES.SV1.C2"/>
+                <!-- <to uri="activemq:queue:RES.SV1.C3"/> -->
+            </loadBalance>
+        </route>
+
+    </camelContext>
+
+</beans>
+

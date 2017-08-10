@@ -1,0 +1,32 @@
+ JMS property  : JMS_AMQP_ACK_TYPE
+ JMS property  : JMSCorrelationID
+ JMS property  : JMSExpiration
+ JMS property  : JMSMessageID
+ JMS property  : JMSDeliveryMode
+ JMS property  : JMSPriority
+ JMS property  : JMSXUserID
+ JMS property  : JMSXGroupSeq
+ JMS property  : JMSTimestamp
+ JMS property  : JMSReplyTo
+ JMS property  : JMSDestination
+ JMS property  : JMSXGroupID
+ JMS property  : JMSType
+ JMS property  : JMSXDeliveryCount
+ JMS property  : JMSRedelivered
+ JMS property  : clientPort
+ JMS property  : clientIp
+ JMS property exists: JMSMessageID
+ JMS property exists: JMSDeliveryMode
+ JMS property exists: JMSPriority
+ JMS property exists: JMSTimestamp
+ JMS property exists: JMSDestination
+ JMS property exists: JMSXDeliveryCount
+ JMS property exists: JMSRedelivered
+ JMS property exists: clientPort
+ JMS property exists: clientIp
+ Application getProperty            : clientPort -> 49536
+ Application getApplicationProperty : clientPort -> 49536
+ Application getProperty            : clientIp -> 127.0.0.1
+ Application getApplicationProperty : clientIp -> 127.0.0.1
+ AMQP Message Annotation x-opt-jms-msg-type is byte value 0x05
+ AMQP Message Annotation x-opt-jms-dest     is byte value 0x00

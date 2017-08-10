@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1"?> 
+<!--
+	Broker AMQP/JMS Layer ( see hps.odp )
+-->
+<BrokerProperties> 
+
+	<BrokerConnection> 
+		<provider>ACTIVEMQ</provider> 
+		<host>sagitta</host>
+		<!-- <host>localhost</host>  -->
+		<transport>AMQP</transport>
+		<port>5672</port>
+		<user>admin</user> 
+		<password>admin</password>
+	</BrokerConnection>	
+	
+	<ClientDispatcher> 
+		<dispatchInputQueue>REQ.DISPATCHER</dispatchInputQueue> 		
+		<dispatchOutputQueue>RES.DISPATCHER</dispatchOutputQueue> 	
+	</ClientDispatcher>	
+	
+</BrokerProperties>

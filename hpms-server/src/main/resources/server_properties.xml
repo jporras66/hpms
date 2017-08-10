@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+	Network Server Layer ( see ../_doc/hpms.odp )
+	Properties to start the tcp/ip network server.
+	Also a list of remote client that are allowed to connect to the server
+-->
+<!--
+	name :  				Server name
+	address :  				IP where hpms-server is running
+	port :  				Port where the sockect is listening
+	maxBuffer :  			Max message buffer length 
+	acl :  					true  -> Check if the client trying to connect is in the clientId's list
+							false -> Any client is allowed to connect
+-->
+<ServerProperties> 
+
+	<Server>
+		<name>HPMS Server Layer</name>
+		<address>127.0.0.1</address> 
+		<port>5555</port>
+		<maxBuffer>4096</maxBuffer>
+		<acl>false</acl>		
+	</Server>
+
+<!--
+	Client List that are allowed to connect to the server.
+	
+	Every Client (IP) has an inputQueue/outputQueue in the Broker
+	Same IP might connect multiple times, and share the same inputQueue/outputQueue
+-->	
+	<clientId>
+		<ip>127.0.0.1</ip>
+		<!-- Note : This control maxConnections has not been implemented yet -->
+		<maxConnections>2</maxConnections> 
+		<inputQueue>CLIENT.127.0.0.1.IN</inputQueue>
+		<outputQueue>CLIENT.127.0.0.1.OUT</outputQueue>
+	</clientId>
+	
+	<clientId>
+  		<ip>192.168.153.3</ip>
+		<maxConnections>2</maxConnections>
+		<inputQueue>CLIENT.192.168.153.3.IN</inputQueue>
+		<outputQueue>CLIENT.192.168.153.3.OUT</outputQueue>
+	</clientId> 
+	
+</ServerProperties>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Queue>
+	<!-- 
+	RES.SV1.C1	RES is response
+				SV1 means RESOLVER_1 (node), that has C1, C2, .. , CN input queues from HOST
+					Queue broker (ActiveMQ/QPID) populates those response queues (Round-Robin) from RES.SV1.HOST
+					RES.SV1.HOST receives responses from HOST
+	prgname = 	res_trx is an .so object, that listen in an response queue
+				response.sh -> response (main) -> driver.o (driver.cob) -> res_trx.so (res_trx.cob)
+	input	=	input  queue
+	output	=	Response queue for RESOLVER_1.
+	timeout	=	No timeout defined
+	-->
+    <prgname>res_trx</prgname>
+	<input>RES.SV1.C1</input>  
+	<output>RES.SV1</output>
+	<error>RES.SV1.ERROR</error>
+	<timeout>N/A</timeout>
+</Queue>

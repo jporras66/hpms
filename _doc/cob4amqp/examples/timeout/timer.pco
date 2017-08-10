@@ -1,0 +1,337 @@
+      *---------------------------------------------------------------*
+      *          i d e n t i f i c a t i o n   d i v i s i o n        *
+      *          =============================================        *
+      *---------------------------------------------------------------*
+       identification division. 
+      *-----------------------.    
+       program-id.      timer.
+       author.          fjavier.porras@gmail.com.        
+       date-written.    13/09/2016.
+      *---------------------------------------------------------------*
+      *             e n v i r o n m e n t   d i v i s i o n           *
+      *             =======================================           *
+      *---------------------------------------------------------------*
+       environment division.
+      *--------------------.
+       configuration section.
+      *---------------------.
+       special-names.
+           decimal-point  is comma
+           alphabet alpha is native
+           alphabet beta  is ebcdic.
+       input-output section.
+      *--------------------.
+       file-control. 
+      * 
+      *---------------------------------------------------------------*
+      *                    d a t a   d i v i s i o n                  *
+      *---------------------------------------------------------------*
+       data division.
+      *-------------.
+       file section.
+      *------------.
+       working-storage section.
+      *-----------------------.
+       01 filler pic x(050)
+                 value  'pgm-timer-ws-start'.
+      *
+       01 pgm-name pic x(15) 
+                 value 'timer.pco'.
+      *
+       01 commit-counter   pic 9(4) value 2000.
+       01 seconds-to-sleep pic 9(4) value 2.
+      *
+       01 w-data.
+          05 file-eof           pic 9.                
+             88 eof             value 1.              
+             88 neof            value 0.              
+          05 reposition         pic 9.                
+             88 rep-found       value 1.              
+             88 rep-nfound      value 0.              
+          05 full-current-date.
+             10 full-datetime.
+                15 f-date.
+                   25 f-year       pic 9(4) value zeros.
+                   25 f-month      pic 99   value zeros.
+                   25 f-day        pic 99   value zeros.
+                15  f-time.
+                   25 c-hour       pic 99   value zeros.
+                   25 c-minutes    pic 99   value zeros.
+                   25 c-seconds    pic 99   value zeros.
+                   25 c-sec-hund   pic 99   value zeros.
+             10 c-time-diff.
+                15 c-gmt-dir    pic x    value spaces.
+                15 c-hour       pic 99   value zeros.
+                15 c-minutes    pic 99   value zeros.
+      *
+       01 command-line-values.
+          05 msgcounter     pic 9(04) value 2000. 
+      *
+       01 i  pic 9(04) value zeros.
+       01 j  pic 9(04) value zeros.
+       01 k  pic 9(04) value zeros.
+       01 l  pic 9(04) value zeros.
+      * 
+      * ( 255 + 1)
+       01 filename  pic x(256).
+       01 val       pic x(256).       
+       01 err pic  x(100). 
+      *
+       01 q_prgname    pic  x(30).
+      *
+      * =============================================== 
+      *
+           copy "message.cpy" replacing leading
+           ==prefix-== BY ==q_==.
+      *       
+      * ===============================================  
+      * 
+       01 rc     binary-short value zero. 
+      *
+      * DBNAME/USERNAME/PASSWORD values defined in C-Style common.h
+      *
+       EXEC SQL BEGIN DECLARE SECTION END-EXEC.
+       01  DB-NAME                 PIC  X(51)   VALUE SPACE.
+       01  DB-USERNAME             PIC  X(51)   VALUE SPACE.
+       01  DB-PASSWORD             PIC  X(51)   VALUE SPACE.
+       01  MSG-ID                  PIC  9(10)   VALUE 0.
+       01  MSG-UUID         PIC  X(101)  VALUE SPACE. 
+       01  MSG-CONTENT             PIC  X(4096) VALUE LOW-VALUES.
+       01  MSG-LEN                 PIC  9(4)    VALUE 0.
+      *
+       EXEC SQL END DECLARE SECTION END-EXEC.
+
+       EXEC SQL INCLUDE SQLCA END-EXEC.
+       01  filler pic x(050)
+                  value  'pgm-timer-ws-end'.
+      *
+       linkage section.
+       01 lnk-db-name      pic  x(51).
+       01 lnk-db-username  pic  x(51).  
+       01 lnk-db-password  pic  x(51). 
+      *
+      * Note : see definitions in common.h
+      * 
+       01 lnk-message      pic x(4096).
+       01 lnk-message-uuid pic x(101)  value spaces.
+       01 lnk-msglen       binary-short.
+       01 lnk-timeout      binary-short.
+      * 
+       01 errstatus        pic  x(101).
+      *
+      *---------------------------------------------------------------*
+      *               p r o c e d u r e   d i v i s i o n             *
+      *---------------------------------------------------------------*
+      *
+       procedure division using
+               by reference lnk-db-name ,
+               by reference lnk-db-username ,
+               by reference lnk-db-password ,
+               by reference lnk-message ,
+               by reference lnk-message-uuid ,
+               by reference lnk-msglen ,
+               by reference lnk-timeout,
+               by reference errstatus.     
+      *       
+       1000-main.
+      *
+           move function current-date to full-current-date.
+           display 'start : ' pgm-name ' - '  full-datetime.
+      *    
+           move lnk-db-name to     DB-NAME 
+           move lnk-db-username to DB-USERNAME
+           move lnk-db-password to DB-PASSWORD
+      *    
+           perform 9001-show-linkage.
+      *
+      *    WHENEVER IS NOT YET SUPPORTED :(
+      *      EXEC SQL WHENEVER SQLERROR PERFORM db-error-trn END-EXEC.
+      *           
+      * Note : PostgreSQL configured to listen in port 5432
+      *        PGBOUNCER  configured to listen in port 6432  
+      *
+      *        DBNAME@HOST:PORT
+      *
+      *    DB-NAME that point to a local DB instance or a local connection pool 
+      *            as PGBOUNCER. 
+      *
+      *    In this case DB-NAME is defined in /etc/pgbouncer/pgbouncer.ini
+      *
+      *    MOVE  "HPS@localhost:5432"         TO   DBNAME. 
+      *    MOVE  "HPS@192.168.254.130:5432"   TO   DBNAME.
+      *    MOVE  "HPS-CP@127.0.0.1:6432"      TO   DBNAME.
+      *
+      *    HPS-CP is defined in /etc/pgbouncer/pgbouncer.ini
+      *
+      *    MOVE  "HPS-CP@127.0.0.1:6432"   TO   DBNAME.
+      *    MOVE  "hps"             TO   USERNAME.
+      *    MOVE  "password"        TO   PASSWD.
+      *
+           EXEC SQL
+               CONNECT :DB-USERNAME IDENTIFIED BY :DB-PASSWORD 
+               USING :DB-NAME 
+           END-EXEC.
+           if sqlcode not = 0 
+               perform db-error-trn 
+               perform 3000-end
+           end-if.
+           DISPLAY "*** BEFORE DB SET NAMES ***".  
+           EXEC SQL
+               SET NAMES 'UTF8'
+           END-EXEC.
+      *      
+      *    display 'timer about to call ... : ' q_prgname '.so'   
+      *    
+           EXEC SQL
+               SELECT NEXTVAL('seq_msg') into :MSG-ID
+           END-EXEC.
+           DISPLAY "*** MSG-ID is : " MSG-ID.
+           move lnk-message-uuid to MSG-UUID
+           move lnk-message      to MSG-CONTENT
+           move lnk-msglen       to MSG-LEN
+      *
+           EXEC SQL
+               INSERT INTO messages VALUES 
+               (:MSG-ID, :MSG-UUID, :MSG-CONTENT, :MSG-LEN)
+           END-EXEC.
+      *
+           if sqlcode not = 0 
+               perform db-error-trn 
+               perform 3000-end
+           end-if.
+      *
+           perform db-commit-work
+      *
+      * to sleep the defined in lnk-timeout (seconds) 
+      *
+           DISPLAY "*** lnk-timeout is : " lnk-timeout
+           call "to_sleep" using
+              by value lnk-timeout  
+           returning rc      
+           on exception 
+              display 'can not find module :  to_sleep ' 
+           end-call.
+      *
+           EXEC SQL
+               SELECT msg_id  INTO :MSG-ID
+                      from messages
+                      where msg_uuid = :MSG-UUID
+           END-EXEC.
+      *
+           if SQLCODE = ZERO then 
+      *
+      * Here a call to a function for a dued timeout
+      *
+              display 'timer - dued timeout msg : ' MSG-UUID 
+              display '      - calling timeout workflow ..!!'
+           else
+      *
+      * Here a call to a function for a dued timeout
+      *
+              display 'timer - msg : ' MSG-UUID 
+              display '      - normal workflow ..!!'
+           end-if.
+      *
+           perform 3000-end.
+      * 
+       1000-main-exit.
+           exit.
+      *
+       2000-msg.  
+      *           
+           if err = spaces then 
+              string 'bye !!! :-)'  
+              x'00' delimited by size into errstatus
+              move 0 to return-code    
+           else
+              string err
+              x'00' delimited by size into errstatus
+              move -1 to return-code
+           end-if.         
+      *        
+       2000-msg-exit.
+           exit.
+      *            
+       3000-end. 
+      * 
+           perform db-disconnect   
+      *    
+           display 'end   : ' pgm-name ' - '  full-datetime. 
+           perform 2000-msg        
+           move function current-date to full-current-date                  
+           goback.    
+      *        
+       3000-end-exit.
+           exit.
+      *  
+      * ========================================================================================
+      *          
+       9001-show-linkage.  
+      *
+      *    display 'timer rc               : ' rc
+           display 'timer lnk-db-name      : ' lnk-db-name
+           display 'timer lnk-db-username  : ' lnk-db-username
+           display 'timer lnk-db-password  : ' lnk-db-password
+           display 'timer lnk-message      : ' lnk-message
+           display 'timer lnk-message-uuid : ' lnk-message-uuid
+           display 'timer lnk-msglen       : ' lnk-msglen
+           display 'timer lnk-timeout      : ' lnk-timeout
+           display 'timer errstatus        : ' errstatus .
+      *        
+       9001-show-linkage-exit.
+           exit.
+      *
+       db-commit-work.
+      *
+           EXEC SQL 
+               COMMIT WORK
+           END-EXEC.
+      *
+       f-db-commit-work.
+           exit.
+      *
+       db-rollback.
+      *
+           EXEC SQL 
+               ROLLBACK
+           END-EXEC.
+      *
+       f-db-rollback.
+           exit.
+      *
+       db-disconnect.
+      *
+           DISPLAY "*** BEFORE DB DISCONNECT ***".
+           EXEC SQL
+               DISCONNECT ALL
+           END-EXEC.
+      *
+       f-db-disconnect.
+           exit.         
+      *
+       db-error-trn.
+      *
+           display "*** sql error ***".
+           display "sqlcode: " sqlcode " " no advancing.
+           evaluate sqlcode
+              when  +10
+                 display "record not found"
+              when  -01
+                 display "connection falied"
+              when  -20
+                 display "internal error"
+              when  -30
+                 display "postgresql error"
+                 display "errcode: "  sqlstate
+                 display sqlerrmc
+                 perform db-rollback
+              when  other
+                 display "undefined error"
+                 display "errcode: "  sqlstate
+                 display sqlerrmc
+           end-evaluate.
+      *
+       f-db-error-trn.
+      *
+           exit.
+      *

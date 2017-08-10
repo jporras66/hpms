@@ -1,0 +1,94 @@
+==========================================================================
+	Cobol interface for AMQP  - Centos 7.3 (fjavier.porras@gmail.com)
+==========================================================================
+							02.AMQP C++ interface
+==========================================================================
+
+->	Note : Neither PostgreSQL nor PGBouncer are needed for these utilities
+
+->	C++  :  cd $APL/amqpbrk :
+		
+	Run Producer, Consumer & Browser
+	
+	./producer <broker_connection.xml> <queue_name> <clientIp> <clientPort> <num_messages>
+	./producer activemq_connection.xml REQ.SV1.C1 127.0.0.1 8080 100
+	
+		ClientIp and ClientPort are specific Application Properties that we want to set for our messages
+	
+		Example : 
+		=========			
+		[javier@sagitta amqpbrk]$ ./producer activemq_connection.xml REQ.SV1.C1 127.0.0.1 8080 5
+		producer.amqpSendMessage - REQ.SV1.C1 : HELLO world 0 !! : text/plain
+		producer.amqpSendMessage - REQ.SV1.C1 : HELLO world 1 !! : text/plain
+		producer.amqpSendMessage - REQ.SV1.C1 : HELLO world 2 !! : text/plain
+		producer.amqpSendMessage - REQ.SV1.C1 : HELLO world 3 !! : text/plain
+		producer.amqpSendMessage - REQ.SV1.C1 : HELLO world 4 !! : text/plain
+		producer.amqpSendMessage - REQ.SV1.C1 : BYE world 0 : application/octet-stream
+		producer.amqpSendMessage - REQ.SV1.C1 : BYE world 1 : application/octet-stream
+		producer.amqpSendMessage - REQ.SV1.C1 : BYE world 2 : application/octet-stream
+		producer.amqpSendMessage - REQ.SV1.C1 : BYE world 3 : application/octet-stream
+		producer.amqpSendMessage - REQ.SV1.C1 : BYE world 4 : application/octet-stream
+		Before Return rc is : 0
+			
+		
+	./consumer <broker_connection.xml> <queue_name>	
+	./consumer activemq_connection.xml REQ.SV1.C1		
+
+		Example : 
+		=========			
+		[javier@sagitta amqpbrk]$ ./consumer activemq_connection.xml REQ.SV1.C1
+		consumer.amqpRecvMessage->receiving from : REQ.SV1.C1 | mime is : text/plain | message is : HELLO world 0 !!ssage is :
+		Property is : name / value  : apl_message_type  ->  5
+		Property is : name / value  : clientIp  ->  127.0.0.1
+		Property is : name / value  : clientPort  ->  8080
+		Property is : name / value  : messageUUID  ->  7cf377c3-cbec-431d-8674-31da10419dd0
+		consumer.amqpRecvMessage->receiving from : REQ.SV1.C1 | mime is : text/plain | message is : HELLO world 1 !!ssage is :
+		Property is : name / value  : apl_message_type  ->  5
+		Property is : name / value  : clientIp  ->  127.0.0.1
+		Property is : name / value  : clientPort  ->  8080
+		Property is : name / value  : messageUUID  ->  4304076e-6d00-4016-875a-77c0c318979e
+
+
+	./browser <broker_connection.xml> <queue_name> <number_of_msgs>
+	./browser activemq_connection.xml REQ.SV1.C1 5
+	
+		Example : 
+		=========
+		amqpBrowseMessage->receiving from : REQ.SV1.C2 | mime is : application/octet-stream | message is : sagitta_2->E000000r<f▒(▒▒#1 ..
+		Property is : name / value  : clientIp  ->  192.168.254.129
+		Property is : name / value  : clientPort  ->  21811
+		Property is : name / value  : messageUUID  ->  09595ac4-d3ea-41b8-8abf-f433ed959769
+		Property is : name / value  : x-amqp-creation-time  ->  1476953684221
+		Property is : name / value  : x-amqp-to  ->  queue://CLIENT.192.168.254.129.IN
+		Property is : name / value  : x-opt-jms-dest  ->  0
+		Property is : name / value  : x-opt-jms-msg-type  ->  3	
+		
+		[javier@sagitta amqpbrk]$ ./browser activemq_connection.xml REQ.SV1.C1 5
+		amqpBrowseMessage->receiving from : REQ.SV1.C1 | mime is : text/plain | message is : HELLO world 0 !!ssage is :
+		Property is : name / value  : apl_message_type  ->  5
+		Property is : name / value  : clientIp  ->  127.0.0.1
+		Property is : name / value  : clientPort  ->  8080
+		Property is : name / value  : messageUUID  ->  07cb97b2-bf74-48ce-bcf0-f7d21f6fd549
+		amqpBrowseMessage->receiving from : REQ.SV1.C1 | mime is : text/plain | message is : HELLO world 1 !!ssage is :
+		Property is : name / value  : apl_message_type  ->  5
+		Property is : name / value  : clientIp  ->  127.0.0.1
+		Property is : name / value  : clientPort  ->  8080
+		Property is : name / value  : messageUUID  ->  5392cdbc-d16d-477d-9c60-fccd5b4e5336
+
+			
+	->	Other routines  :  cd $APL/common :
+	
+		./test2ebcdic  		ebcdic to ascii and ascii to ebcdic convertion
+		./test2xmlcfg		XML file config load
+		./testmicrosleep	Process sleep ( microseconds resolution )
+	
+	->	queueTimeout ( moved to _example/timeout ) :
+	
+			- This process tries to simulate a message timeout 
+			- Unfortunately is not thread safe, issues with GNU Cobol calls .. (It's a pitty. Working on it !!!)  
+			- So this is a single process/single thread model, at the moment..
+			
+			./queueTimeout <db_connection.xml> <broker_connection.xml> <timeout_queue.xml> <timeout_time>
+			
+			- Timeout processing has finally implemented in Java ( see hpms-server project )
+	

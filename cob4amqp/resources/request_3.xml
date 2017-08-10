@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Queue>
+    <prgname>req_trx</prgname>
+	<input>REQ.SV1.C3</input>  
+	<output>REQ.SV1.HOST</output>
+	<error>REQ.SV1.ERROR</error>
+	<timeout>REQ.SV1.TIMEOUT</timeout>
+</Queue>

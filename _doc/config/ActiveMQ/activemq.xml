@@ -1,0 +1,297 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!-- START SNIPPET: example -->
+<beans
+  xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans     http://www.springframework.org/schema/beans/spring-beans.xsd
+                      http://activemq.apache.org/schema/core         http://activemq.apache.org/schema/core/activemq-core.xsd 
+                      http://camel.apache.org/schema/spring             http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <!-- Allows us to use system properties as variables in this configuration file -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <value>file:${activemq.conf}/credentials.properties</value>
+        </property>
+    </bean>
+
+   <!-- Allows accessing the server log -->
+    <bean id="logQuery" class="io.fabric8.insight.log.log4j.Log4jLogQuery"
+          lazy-init="false" scope="singleton"
+          init-method="start" destroy-method="stop">
+    </bean>
+
+    <!-- 
+    <bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL" value="vm://localhost" />
+            </bean>
+        </property>
+    </bean> 
+    
+    <bean id="jmsConnectionFactory" class="org.apache.qpid.jms.JmsConnectionFactory">
+      <property name="remoteURI" value="amqp://localhost:5672" />
+      <property name="username" value="admin"/>
+      <property name="password" value="admin"/>
+    </bean>
+     
+    <bean id="jmsCachingConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+      <property name="targetConnectionFactory" ref="jmsConnectionFactory" />
+    </bean>
+     
+    <bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration" >
+      <property name="connectionFactory" ref="jmsCachingConnectionFactory" /> 
+      <property name="cacheLevelName" value="CACHE_CONSUMER" />
+    </bean>    
+     
+    <bean id="amqp" class="org.apache.camel.component.amqp.AMQPComponent">
+        <property name="configuration" ref="jmsConfig" />
+    </bean>
+    -->
+    <!--
+        The <broker> element is used to configure the ActiveMQ broker.
+    -->
+    <broker xmlns="http://activemq.apache.org/schema/core" persistent="false" brokerName="localhost" dataDirectory="${activemq.data}">
+
+        <destinationPolicy>
+            <policyMap>
+              <policyEntries>
+                <policyEntry topic=">" >
+                    <!-- The constantPendingMessageLimitStrategy is used to prevent
+                         slow topic consumers to block producers and affect other consumers
+                         by limiting the number of messages that are retained
+                         For more information, see:
+
+                         http://activemq.apache.org/slow-consumer-handling.html
+
+                    -->
+                  <pendingMessageLimitStrategy>
+                    <constantPendingMessageLimitStrategy limit="1000"/>
+                  </pendingMessageLimitStrategy>
+                </policyEntry>
+              </policyEntries>
+            </policyMap>
+        </destinationPolicy>
+
+
+        <!--
+            The managementContext is used to configure how ActiveMQ is exposed in
+            JMX. By default, ActiveMQ uses the MBean server that is started by
+            the JVM. For more information, see:
+
+            http://activemq.apache.org/jmx.html
+        -->
+        <managementContext>
+            <managementContext createConnector="false"/>
+        </managementContext>
+
+        <!--
+            Configure message persistence for the broker. The default persistence
+            mechanism is the KahaDB store (identified by the kahaDB tag).
+            For more information, see:
+
+            http://activemq.apache.org/persistence.html
+        -->
+        <persistenceAdapter>
+            <kahaDB directory="${activemq.data}/kahadb"/>
+        </persistenceAdapter>
+
+
+          <!--
+            The systemUsage controls the maximum amount of space the broker will
+            use before disabling caching and/or slowing down producers. For more information, see:
+            http://activemq.apache.org/producer-flow-control.html
+          -->
+          <systemUsage>
+            <systemUsage>
+                <memoryUsage>
+                    <memoryUsage percentOfJvmHeap="70" />
+                </memoryUsage>
+                <storeUsage>
+                    <storeUsage limit="100 gb"/>
+                </storeUsage>
+                <tempUsage>
+                    <tempUsage limit="50 gb"/>
+                </tempUsage>
+            </systemUsage>
+        </systemUsage>
+
+        <!--
+            The transport connectors expose ActiveMQ over a given protocol to
+            clients and other brokers. For more information, see:
+
+            http://activemq.apache.org/configuring-transports.html
+        -->
+        <transportConnectors>
+            <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
+            <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="amqp" uri="amqp://0.0.0.0:5672??maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+	    <!-- <transportConnector name="amqp" uri="amqp://0.0.0.0:5672??transport.transformer=jms&amp;maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/> -->
+            <!-- 
+            <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            -->
+        </transportConnectors>
+
+        <!-- destroy the spring context on shutdown to stop jetty -->
+        <shutdownHooks>
+            <bean xmlns="http://www.springframework.org/schema/beans" class="org.apache.activemq.hooks.SpringContextHook" />
+        </shutdownHooks>
+
+    </broker>
+    <!--
+        Enable web consoles, REST and Ajax APIs and demos
+        The web consoles requires by default login, you can disable this in the jetty.xml file
+
+        Take a look at ${ACTIVEMQ_HOME}/conf/jetty.xml for more details
+    -->
+    <import resource="jetty.xml"/>
+ 
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+
+        <!--        Network to Broker Layer - Input socket queues to Request Dispatcher
+
+                CLIENT.127.0.0.1.IN       : input queue for remote client 127.0.0.1
+                CLIENT.192.168.153.3.IN : input queue for remote client 192.168.153.3
+                REQ.DISPATCHER                : input queue for dispatching request
+        -->
+        <route>
+            <from uri="activemq:queue:CLIENT.127.0.0.1.IN"/>
+            <to   uri="activemq:queue:REQ.DISPATCHER"/>
+        </route>
+        <route>
+            <from uri="activemq:queue:CLIENT.192.168.153.3.IN"/>
+            <to   uri="activemq:queue:REQ.DISPATCHER"/>
+        </route>        
+
+        <!--        Broker Layer - Response Queues from resolver nodes to Response Dispatcher
+
+                RES.SV1  : output queue for Resolver Node1
+                RES.SV2  : output queue for Resolver Node2
+                ...
+                RES.SVM  : output queue for Resolver NodeM
+                RES.DISPATCHER : output queue for dispatching responses
+        -->
+        <route>
+            <from uri="activemq:queue:RES.SV1"/>
+            <to   uri="activemq:queue:RES.DISPATCHER"/>
+        </route>
+        <!-- 
+		<route>
+            <from uri="activemq:queue:RES.SV2"/>
+            <to   uri="activemq:queue:RES.DISPATCHER"/>
+        </route>
+        <route>
+            <from uri="activemq:queue:RES.SV3"/>
+            <to   uri="activemq:queue:RES.DISPATCHER"/>
+        </route>
+		-->
+        <!--        Broker to Network Layer - Response Dispatcher to Output socket queues
+
+                CLIENT.127.0.0.1.IN       : input queue for Client 127.0.0.1
+                CLIENT.192.168.153.3.IN : input queue for Client 192.168.153.3
+                REQ.DISPATCHER            : input queue for dispatching request
+        -->
+        <route>
+            <from uri="activemq:queue:RES.DISPATCHER"/>
+            <choice>
+                <when>
+                    <simple>${header.clientIp} contains '192.168.153.3'</simple>
+                    <to uri="activemq:queue:CLIENT.192.168.153.3.OUT"/>
+                </when>
+                <when>
+                    <simple>${header.clientIp} contains '127.0.0.1'</simple>
+                    <to uri="activemq:queue:CLIENT.127.0.0.1.OUT"/>
+                </when>
+                <otherwise>
+                    <to uri="activemq:queue:RES.DISPATCHER.ERROR"/>
+                    <stop/>
+                </otherwise>
+            </choice>
+        </route>
+
+        <route>
+        <!--        Broker Layer - Dispatcher to Resolver's Queues
+
+                REQ.DISPATCHER : input queue for dispatching request
+                REQ.SV1        : request input queue for Resolver Node1
+                REQ.SV2        : request input queue for Resolver Node2
+                REQ.SV3        : request input queue for Resolver Node3
+        -->
+            <from uri="activemq:queue:REQ.DISPATCHER"/>
+            <loadBalance>       
+                <roundRobin/> 
+                <to uri="activemq:queue:REQ.SV1"/>       
+                <to uri="activemq:queue:REQ.SV2"/>
+                <!-- <to uri="activemq:queue:REQ.SV3"/> -->
+            </loadBalance>
+        </route>
+        <!--        Resolver Node1 (SV1) - Request Queues
+
+                REQ.SV1        : request input queue for Resolver Node1
+                REQ.SV2.C1     : input queue to resolve request Process_1
+                REQ.SV2.C2     : input queue to resolve request Process_2
+                ...
+                REQ.SV2.CN     : input queue to resolve request Process_N
+        -->
+        <route>
+            <from uri="activemq:queue:REQ.SV1"/>
+            <loadBalance>
+                <roundRobin/>
+                <to uri="activemq:queue:REQ.SV1.C1"/>
+                <to uri="activemq:queue:REQ.SV1.C2"/>
+                <to uri="activemq:queue:REQ.SV1.C3"/>
+            </loadBalance>
+        </route>
+        <!--         Resolver Node1 (SV1) - Timeout Queues
+
+                REQ.SV1.TIMEOUT_1, REQ.SV1.TIMEOUT_2, ... , REQ.SV1.TIMEOUT_N
+                
+        -->
+        <route>
+            <from uri="activemq:queue:REQ.SV1.TIMEOUT"/>
+            <loadBalance>
+                <roundRobin/>
+                <to uri="activemq:queue:REQ.SV1.TIMEOUT_1"/>
+                <to uri="activemq:queue:REQ.SV1.TIMEOUT_2"/>
+                <!-- <to uri="activemq:queue:REQ.SV1.TIMEOUT_3"/> -->
+            </loadBalance>
+        </route>
+        <!--        Resolver Node1 (SV1) - Response Queues
+
+                RES.SV1.HOST   : input queue from Host
+                RES.SV1.C1     : input queue to answer Process_1
+                RES.SV1.C2     : input queue to answer Process_2
+                ...
+                RES.SV1.CM     : input queue to answer Process_M
+        -->
+        <route>
+            <from uri="activemq:queue:RES.SV1.HOST"/>
+            <loadBalance>
+                <roundRobin/>
+                <to uri="activemq:queue:RES.SV1.C1"/>
+                <to uri="activemq:queue:RES.SV1.C2"/>
+                <!-- <to uri="activemq:queue:RES.SV1.C3"/> -->
+            </loadBalance>
+        </route>
+
+    </camelContext>
+
+</beans>
+<!-- END SNIPPET: example -->
