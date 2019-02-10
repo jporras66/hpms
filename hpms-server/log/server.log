@@ -1,0 +1,12 @@
+2019-02-10 15:55:01,371 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # ConfigurationUtils.locate(): base is null, name is broker_properties.xml
+2019-02-10 15:55:01,373 main  DEBUG org.apache.commons.configuration.DefaultFileSystem # Could not locate file broker_properties.xml at null: no protocol: broker_properties.xml
+2019-02-10 15:55:01,377 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # Loading configuration from the context classpath (broker_properties.xml)
+2019-02-10 15:55:23,255 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # ConfigurationUtils.locate(): base is null, name is broker_properties.xml
+2019-02-10 15:55:23,255 main  DEBUG org.apache.commons.configuration.DefaultFileSystem # Could not locate file broker_properties.xml at null: no protocol: broker_properties.xml
+2019-02-10 15:55:23,256 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # Loading configuration from the context classpath (broker_properties.xml)
+2019-02-10 16:55:28,872 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # ConfigurationUtils.locate(): base is null, name is broker_properties.xml
+2019-02-10 16:55:28,874 main  DEBUG org.apache.commons.configuration.DefaultFileSystem # Could not locate file broker_properties.xml at null: no protocol: broker_properties.xml
+2019-02-10 16:55:28,877 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # Loading configuration from the context classpath (broker_properties.xml)
+2019-02-10 16:55:50,644 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # ConfigurationUtils.locate(): base is null, name is broker_properties.xml
+2019-02-10 16:55:50,644 main  DEBUG org.apache.commons.configuration.DefaultFileSystem # Could not locate file broker_properties.xml at null: no protocol: broker_properties.xml
+2019-02-10 16:55:50,645 main  DEBUG org.apache.commons.configuration.ConfigurationUtils # Loading configuration from the context classpath (broker_properties.xml)
