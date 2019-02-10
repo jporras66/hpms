@@ -39,7 +39,7 @@ import com.indarsoft.hps.utl.MessageUtl;
  */
 public class TimeoutMessage implements Runnable {
 
-	private static Logger log = Logger.getLogger(MoveMessage.class.getName());
+	private static Logger log = Logger.getLogger(TimeoutMessage.class.getName());
 	private static DbBean dbbean;
 	private static BrokerBean brokerbean;
 	private static Broker broker;
